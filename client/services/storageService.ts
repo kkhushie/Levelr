@@ -2,10 +2,6 @@ import { Goal, User } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Fallback to local storage if server is down? 
-// For this task, "proper mongo db connection" implies we rely on the server.
-// But as a safety measure for dev experience, we might want to alert if it fails.
-
 export const storageService = {
   login: async (email: string, password: string): Promise<User> => {
     const res = await fetch(`${API_BASE}/auth/login`, {

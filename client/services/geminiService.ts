@@ -1,5 +1,6 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { Difficulty, GoalCategory, LevelData, LevelStatus } from "../types";
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper to determine base rewards based on difficulty
 const getBaseRewards = (difficulty: Difficulty) => {
@@ -17,81 +18,30 @@ export const generateLevelPlan = async (
   levelCount: number
 ): Promise<LevelData[]> => {
 
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("API Key is missing. Please set the GEMINI_API_KEY environment variable.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-  const prompt = `
-    I am creating a gamified roadmap for a user.
-    Goal: "${goal}"
-    Category: "${category}"
-    Difficulty: "${difficulty}"
-    Total Levels: ${levelCount}
-
-    Break this goal down into exactly ${levelCount} progressive levels.
-    Level 1 should be the starting point (easy setup/basics).
-    The last level should be the completion of the goal.
-    Return a JSON array where each item represents a level.
-  `;
-
-  console.log("Generating level plan for:", { goal, category, difficulty, levelCount });
-  console.log("Prompt length:", prompt.length);
+  console.log("Generating level plan via Server for:", { goal, category, difficulty, levelCount });
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING, description: "Short punchy title for the level (max 5 words)" },
-              description: { type: Type.STRING, description: "Actionable instructions for this level (1-2 sentences)" },
-              tasks: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "List of 3-5 specific sub-tasks/checklist items to complete this level."
-              },
-              estimatedTime: { type: Type.STRING, description: "Estimated time to complete (e.g. '2 hours', '30 mins')" },
-              tips: { type: Type.STRING, description: "One helpful pro-tip for this level." },
-              resources: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    url: { type: Type.STRING }
-                  }
-                },
-                description: "1-2 dummy/placeholder links to helpful resources (e.g. documentation, tutorials)."
-              }
-            },
-            required: ["title", "description", "tasks", "estimatedTime"],
-          },
-        },
-      },
+    const response = await fetch(`${API_BASE}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: goal, category, difficulty, levels: levelCount })
     });
 
-    // console.log("Gemini Response Object:", response);
-    const rawText = response.text || "";
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Server Error: ${errText}`);
+    }
 
-    const rawLevels = JSON.parse(rawText || "[]") as Array<{
-      title: string;
-      description: string;
-      tasks?: string[];
-      estimatedTime?: string;
-      tips?: string;
-      resources?: { title: string; url: string }[];
-    }>;
+    const rawLevels = await response.json();
+
+    // Validate if it is array
+    if (!Array.isArray(rawLevels)) {
+      throw new Error("Invalid format from AI service");
+    }
+
     const { xp, coins } = getBaseRewards(difficulty);
 
-    // Transform into app-ready LevelData
-    return rawLevels.map((l, index) => ({
+    return rawLevels.map((l: any, index: number) => ({
       levelNumber: index + 1,
       title: l.title,
       description: l.description,
