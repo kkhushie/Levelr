@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Levelr - Gamified Goals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Fredoka', 'sans-serif'], 
+              game: ['"Press Start 2P"', 'cursive'],
+            },
+            colors: {
+              pastel: {
+                bg: '#F0F9FF',      // Alice Blue (Very light, easy on eyes)
+                card: '#FFFFFF',    // White
+                text: '#334155',    // Slate 700 (High contrast text)
+                textLight: '#64748B', // Slate 500 (Secondary text)
+                
+                blue: '#4361EE',    // Primary Vivid Blue
+                blueDark: '#3A0CA3', // Deep Blue Border
+                blueLight: '#4CC9F0', // Cyan/Sky accent
+                
+                purple: '#7209B7',
+                purpleLight: '#B5179E',
+                
+                green: '#4ADE80',
+                greenDark: '#16A34A',
+
+                yellow: '#FACC15',
+                yellowDark: '#CA8A04',
+              },
+              brand: {
+                primary: '#4361EE', // Main Action (Vivid Blue)
+                secondary: '#4CC9F0', // Secondary (Cyan)
+                accent: '#3A0CA3',
+              }
+            },
+            animation: {
+              'bounce-slight': 'bounceSlight 2s infinite',
+              'float': 'float 3s ease-in-out infinite',
+            },
+            keyframes: {
+              bounceSlight: {
+                '0%, 100%': { transform: 'translateY(-5%)' },
+                '50%': { transform: 'translateY(0)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #F0F9FF;
+        color: #334155;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F0F9FF;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #93C5FD;
+        border-radius: 99px;
+        border: 2px solid #F0F9FF;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #60A5FA;
+      }
+      
+      .dot-pattern {
+        background-image: radial-gradient(#CBD5E1 2px, transparent 2px);
+        background-size: 24px 24px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "uuid": "https://esm.sh/uuid@^13.0.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "Levelr",
+  "description": "A gamified productivity tracker that turns goals into a Candy Crush style level map using AI.",
+  "requestFramePermissions": []
+}
