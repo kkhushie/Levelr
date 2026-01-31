@@ -27,6 +27,7 @@ export interface LevelData {
   status: LevelStatus;
   // Enhanced Details
   tasks?: string[];
+  completedTasks?: boolean[];
   estimatedTime?: string;
   resources?: { title: string; url: string }[];
   tips?: string;

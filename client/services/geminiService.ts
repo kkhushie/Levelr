@@ -77,9 +77,8 @@ export const generateLevelPlan = async (
       },
     });
 
-    console.log("Gemini Response Object:", response);
+    // console.log("Gemini Response Object:", response);
     const rawText = response.text || "";
-    console.log("Raw Response Text:", rawText);
 
     const rawLevels = JSON.parse(rawText || "[]") as Array<{
       title: string;

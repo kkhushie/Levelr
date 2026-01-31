@@ -1,32 +1,13 @@
 {
-  "name": "levelr",
+  "name": "levelr-root",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "server": "node server/index.js",
-    "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "install:all": "npm install && cd client && npm install && cd server && npm install"
   },
   "dependencies": {
-    "@google/genai": "^1.38.0",
-    "concurrently": "^9.2.1",
-    "cors": "^2.8.6",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "lucide-react": "^0.563.0",
-    "mongoose": "^9.1.5",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.0",
-    "uuid": "^13.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "concurrently": "^9.2.1"
   }
 }

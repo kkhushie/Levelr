@@ -189,8 +189,22 @@ const App: React.FC = () => {
 // Utils Wrappers
 const LandingPageWrapper = () => {
   const navigate = useNavigate();
-  // Check if user is logged in, redirect to dashboard?
-  return <LandingPage onStart={() => navigate('/auth')} onLogin={() => navigate('/auth')} />;
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    storageService.getCurrentUser()
+      .then(u => setUser(u))
+      .catch((e) => console.log("Not logged in"));
+  }, []);
+
+  return (
+    <LandingPage
+      onStart={() => user ? navigate('/dashboard') : navigate('/auth')}
+      onLogin={() => navigate('/auth')}
+      onDashboard={() => navigate('/dashboard')}
+      user={user}
+    />
+  );
 };
 
 const AuthWrapper = () => {

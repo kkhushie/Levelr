@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { Goal, LevelData, LevelStatus } from '../types';
 import { storageService } from '../services/storageService';
 import { LevelMap } from './LevelMap';
@@ -39,6 +40,17 @@ export const QuestView: React.FC = () => {
         navigate(`/quest/${id}/level/${level.levelNumber}`);
     };
 
+    const handleDelete = async () => {
+        if (!window.confirm("Are you sure you want to delete this quest? This action cannot be undone.")) {
+            return;
+        }
+
+        if (goal) {
+            await storageService.deleteGoal(goal.id);
+            navigate('/dashboard');
+        }
+    };
+
     if (loading) return <div className="text-center p-10">Loading map...</div>;
     if (!goal) return <div className="text-center p-10">Quest not found.</div>;
 
@@ -52,6 +64,16 @@ export const QuestView: React.FC = () => {
                     &larr; Dashboard
                 </button>
             </div>
+
+            <div className="absolute top-4 right-4 z-10">
+                <button
+                    onClick={handleDelete}
+                    className="bg-red-50/80 backdrop-blur px-4 py-2 rounded-xl font-bold text-red-500 hover:bg-red-100 shadow-sm flex items-center gap-2"
+                >
+                    <Trash2 size={18} /> Delete Quest
+                </button>
+            </div>
+
             {/* We might want a header tailored for the quest */}
 
             <LevelMap levels={goal.levels} onLevelClick={handleLevelClick} />

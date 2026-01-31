@@ -47,14 +47,14 @@ export const QuestCard: React.FC<QuestCardProps> = ({ goal, onClick }) => {
       </p>
 
       {/* Progress Bar */}
-      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mt-auto border border-slate-100">
+      <div className="w-[96%] h-3 bg-slate-100 rounded-full overflow-hidden mt-auto border border-slate-100">
         <div 
           className={`h-full rounded-full transition-all duration-500 ${goal.isCompleted ? 'bg-[#4ADE80]' : 'bg-[#4361EE]'}`}
           style={{ width: `${goal.progress}%` }}
         ></div>
       </div>
       
-      <div className="absolute right-4 bottom-5 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+      <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
         <Play size={24} className="text-[#4361EE] fill-[#4361EE]" />
       </div>
     </button>
