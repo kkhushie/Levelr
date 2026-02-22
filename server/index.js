@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { User } from './models/User.js';
 import { Goal } from './models/Goal.js';
+import { generateLevelPlan } from './services/geminiService.js';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config({ path: '.env.local' });
 
@@ -18,7 +20,36 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Rate Limiter for AI Generation
+const aiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // Increased to 20 to handle small shared-IP groups better
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { message: "Starting a new journey? You're moving fast! Take a short break before generating more levels." }
+});
+
 // --- Routes ---
+
+// AI Generation
+app.post('/api/generate', aiLimiter, async (req, res) => {
+    try {
+        const { title, category, difficulty, levels } = req.body;
+        if (!title) return res.status(400).json({ message: "Please provide a goal title." });
+
+        const levelPlan = await generateLevelPlan(title, category, difficulty, levels);
+        res.json(levelPlan);
+    } catch (err) {
+        console.error("AI Route Error:", err);
+
+        // Handle Gemini Overload Specifically
+        if (err.status === 503 || err.message?.includes('Overloaded')) {
+            return res.status(503).json({ message: "The AI is currently experiencing high traffic. Please try again in a moment." });
+        }
+
+        res.status(500).json({ message: "We couldn't generate your plan right now. Please try again." });
+    }
+});
 
 // Auth
 app.post('/api/auth/register', async (req, res) => {

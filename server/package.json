@@ -7,10 +7,15 @@
         "dev": "node --watch index.js"
     },
     "dependencies": {
+        "@google/genai": "^1.39.0",
         "cors": "^2.8.6",
         "dotenv": "^17.2.3",
         "express": "^5.2.1",
+        "express-rate-limit": "^8.2.1",
         "mongoose": "^9.1.5",
         "uuid": "^13.0.0"
+    },
+    "devDependencies": {
+        "@types/uuid": "^10.0.0"
     }
 }

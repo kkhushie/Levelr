@@ -1,7 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { Difficulty, GoalCategory, LevelData, LevelStatus } from "../types";
 
-/* ========================= */
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Helper to determine base rewards based on difficulty
 const getBaseRewards = (difficulty: Difficulty) => {
   switch (difficulty) {
     case Difficulty.HARD: return { xp: 150, coins: 50 };
@@ -173,42 +174,33 @@ export const generateLevelPlan = async (
   levelCount: number
 ): Promise<LevelData[]> => {
 
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("API Key missing");
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-  const prompt = `Return ONLY a valid JSON array. No markdown, no explanation.
-
-Goal: "${goal}"
-Category: "${category}"
-Difficulty: "${difficulty}"
-
-Create exactly ${levelCount} progressive levels. Each level must have:
-- title (string, max 5 words)
-- description (string, 1-2 sentences)
-- tasks (array of 3-5 strings)
-- estimatedTime (string, e.g. "2 hours")
-- tips (string, one helpful tip)
-- resources (array of objects with title and url)
-
-Return the complete array.`;
+  console.log("Generating level plan via Server for:", { goal, category, difficulty, levelCount });
 
   try {
-    const raw = await generateWithRotation(ai, prompt);
-    const parsed = cleanJsonResponse(raw); // ⬅️ NOW RETURNS ARRAY DIRECTLY
+    const response = await fetch(`${API_BASE}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: goal, category, difficulty, levels: levelCount })
+    });
 
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      throw new Error("Invalid response structure");
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Server Error: ${errText}`);
+    }
+
+    const rawLevels = await response.json();
+
+    // Validate if it is array
+    if (!Array.isArray(rawLevels)) {
+      throw new Error("Invalid format from AI service");
     }
 
     const { xp, coins } = getBaseRewards(difficulty);
 
-    return parsed.slice(0, levelCount).map((l: any, i: number) => ({
-      levelNumber: i + 1,
-      title: l.title || `Level ${i + 1}`,
-      description: l.description || "Complete this milestone.",
+    return rawLevels.map((l: any, index: number) => ({
+      levelNumber: index + 1,
+      title: l.title,
+      description: l.description,
       tasks: l.tasks || [],
       estimatedTime: l.estimatedTime || "1 hour",
       tips: l.tips,
