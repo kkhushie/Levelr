@@ -2,6 +2,14 @@ import { Goal, User } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const getHeaders = () => {
+  const token = localStorage.getItem('levelr_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
 export const storageService = {
   login: async (email: string, password: string): Promise<User> => {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -10,9 +18,10 @@ export const storageService = {
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) throw new Error(await res.text());
-    const user = await res.json();
-    localStorage.setItem('levelr_user_id', user.id);
-    return user;
+    const data = await res.json();
+    localStorage.setItem('levelr_user_id', data.id);
+    localStorage.setItem('levelr_token', data.token);
+    return data;
   },
 
   register: async (username: string, email: string, password: string): Promise<User> => {
@@ -22,13 +31,15 @@ export const storageService = {
       body: JSON.stringify({ username, email, password })
     });
     if (!res.ok) throw new Error(await res.text());
-    const user = await res.json();
-    localStorage.setItem('levelr_user_id', user.id);
-    return user;
+    const data = await res.json();
+    localStorage.setItem('levelr_user_id', data.id);
+    localStorage.setItem('levelr_token', data.token);
+    return data;
   },
 
   logout: async (): Promise<void> => {
     localStorage.removeItem('levelr_user_id');
+    localStorage.removeItem('levelr_token');
   },
 
   getCurrentUser: async (): Promise<User | null> => {
@@ -36,10 +47,14 @@ export const storageService = {
     if (!userId) return null;
 
     try {
-      const res = await fetch(`${API_BASE}/users/${userId}`);
+      const res = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: getHeaders()
+      });
       if (!res.ok) {
-        // If 404, maybe session is invalid
-        if (res.status === 404) localStorage.removeItem('levelr_user_id');
+        if (res.status === 401 || res.status === 404) {
+          localStorage.removeItem('levelr_user_id');
+          localStorage.removeItem('levelr_token');
+        }
         return null;
       }
       return await res.json();
@@ -52,21 +67,15 @@ export const storageService = {
   updateUser: async (user: User): Promise<void> => {
     await fetch(`${API_BASE}/users/${user.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(user)
     });
   },
 
   updatePassword: async (userId: string, password: string): Promise<void> => {
-    // We didn't strictly implement this in the backend index.js yet, but let's assume update user handles it
-    // Wait, the update user route in index.js takes the body and updates. 
-    // To support password update safely we should probably have a specific route OR allow it here.
-    // My previous index.js update route was: User.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
-    // This allows updating any field including password.
-    // Ideally we hash it, but for now just updating is consistent with previous logic.
     await fetch(`${API_BASE}/users/${userId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ password })
     });
   },
@@ -75,7 +84,9 @@ export const storageService = {
     const userId = localStorage.getItem('levelr_user_id');
     if (!userId) return [];
 
-    const res = await fetch(`${API_BASE}/goals?userId=${userId}`);
+    const res = await fetch(`${API_BASE}/goals?userId=${userId}`, {
+      headers: getHeaders()
+    });
     if (!res.ok) return [];
     return await res.json();
   },
@@ -86,14 +97,15 @@ export const storageService = {
 
     await fetch(`${API_BASE}/goals`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ ...goal, userId }) // ensure userId is attached
     });
   },
 
   deleteGoal: async (goalId: string): Promise<void> => {
     await fetch(`${API_BASE}/goals/${goalId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getHeaders()
     });
   }
 };

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     id: { type: String, unique: true, default: uuidv4 },
     username: String,
     email: { type: String, unique: true, required: true },
-    password: { type: String, required: true }, // Storing plaintext as per MVP requirement, but TODO: Hash this!
+    password: { type: String, required: true },
     stats: {
         xp: { type: Number, default: 0 },
         coins: { type: Number, default: 0 },
