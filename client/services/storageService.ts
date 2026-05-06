@@ -1,40 +1,47 @@
+import axios from "axios";
 import { Goal, User } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const getHeaders = () => {
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Request interceptor to attach the JWT token to every request automatically
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('levelr_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-};
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
 
 export const storageService = {
   login: async (email: string, password: string): Promise<User> => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    localStorage.setItem('levelr_user_id', data.id);
-    localStorage.setItem('levelr_token', data.token);
-    return data;
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      const data = res.data;
+      localStorage.setItem('levelr_user_id', data.id);
+      localStorage.setItem('levelr_token', data.token);
+      return data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message || "Login failed");
+    }
   },
 
   register: async (username: string, email: string, password: string): Promise<User> => {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password })
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    localStorage.setItem('levelr_user_id', data.id);
-    localStorage.setItem('levelr_token', data.token);
-    return data;
+    try {
+      const res = await api.post('/auth/register', { username, email, password });
+      const data = res.data;
+      localStorage.setItem('levelr_user_id', data.id);
+      localStorage.setItem('levelr_token', data.token);
+      return data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message || "Registration failed");
+    }
   },
 
   logout: async (): Promise<void> => {
@@ -47,65 +54,49 @@ export const storageService = {
     if (!userId) return null;
 
     try {
-      const res = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: getHeaders()
-      });
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 404) {
-          localStorage.removeItem('levelr_user_id');
-          localStorage.removeItem('levelr_token');
-        }
-        return null;
+      const res = await api.get(`/users/${userId}`);
+      return res.data;
+    } catch (e: any) {
+      if (e.response && (e.response.status === 401 || e.response.status === 404)) {
+        localStorage.removeItem('levelr_user_id');
+        localStorage.removeItem('levelr_token');
       }
-      return await res.json();
-    } catch (e) {
       console.error("Failed to fetch user, maybe server is down", e);
       return null;
     }
   },
 
   updateUser: async (user: User): Promise<void> => {
-    await fetch(`${API_BASE}/users/${user.id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(user)
-    });
+    await api.put(`/users/${user.id}`, user);
   },
 
   updatePassword: async (userId: string, password: string): Promise<void> => {
-    await fetch(`${API_BASE}/users/${userId}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ password })
-    });
+    await api.put(`/users/${userId}`, { password });
   },
 
   getGoals: async (): Promise<Goal[]> => {
     const userId = localStorage.getItem('levelr_user_id');
     if (!userId) return [];
 
-    const res = await fetch(`${API_BASE}/goals?userId=${userId}`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) return [];
-    return await res.json();
+    try {
+      const res = await api.get(`/goals?userId=${userId}`);
+      return res.data;
+    } catch (e) {
+      return [];
+    }
   },
 
   saveGoal: async (goal: Goal): Promise<void> => {
     const userId = localStorage.getItem('levelr_user_id');
     if (!userId) throw new Error("No active session");
 
-    await fetch(`${API_BASE}/goals`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ ...goal, userId }) // ensure userId is attached
-    });
+    await api.post('/goals', { ...goal, userId });
   },
 
   deleteGoal: async (goalId: string): Promise<void> => {
-    await fetch(`${API_BASE}/goals/${goalId}`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    });
+    await api.delete(`/goals/${goalId}`);
   }
 };
+
+// Export the generic api client so other services can use it securely
+export default api;

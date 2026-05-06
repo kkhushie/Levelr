@@ -111,11 +111,23 @@ app.post('/api/auth/login', async (req, res) => {
         
         // Find user by email
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ message: "Invalid credentials" });
+        if (!user) return res.status(400).json({ message: "Invalid credentials - No account found with this email" });
 
+        console.log("here..")
         // Compare hashed password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+        let isMatch = await bcrypt.compare(password, user.password);
+        
+        // Fallback for older accounts that were created with plaintext passwords
+        if (!isMatch && password === user.password) {
+            isMatch = true;
+            
+            // Auto-upgrade the user's password to be hashed for the future
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+            await user.save();
+        }
+        console.log("is match : ",isMatch)
+        if (!isMatch) return res.status(400).json({ message: "Invalid credentials - Incorrect password" });
 
         // Generate JWT Token
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });

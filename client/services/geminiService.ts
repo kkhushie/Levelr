@@ -1,6 +1,5 @@
 import { Difficulty, GoalCategory, LevelData, LevelStatus } from "../types";
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import api from "./storageService";
 
 // Helper to determine base rewards based on difficulty
 const getBaseRewards = (difficulty: Difficulty) => {
@@ -21,18 +20,8 @@ export const generateLevelPlan = async (
   console.log("Generating level plan via Server for:", { goal, category, difficulty, levelCount });
 
   try {
-    const response = await fetch(`${API_BASE}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: goal, category, difficulty, levels: levelCount })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Server Error: ${errText}`);
-    }
-
-    const rawLevels = await response.json();
+    const response = await api.post('/generate', { title: goal, category, difficulty, levels: levelCount });
+    const rawLevels = response.data;
 
     // Validate if it is array
     if (!Array.isArray(rawLevels)) {
